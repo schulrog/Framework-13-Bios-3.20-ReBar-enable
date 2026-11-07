@@ -1,0 +1,17 @@
+*.pdb
+*.obj
+*.o
+*.exe
+.zig-cache/
+zig-cache/
+zig-out/
+tests/fixtures/
+tests/build/
+__pycache__/
+HII-export.bin
+HII-setup.bin
+HFW30.bin
+*.fd
+*.rom
+*.img
+*.log
