@@ -1,0 +1,60 @@
+RebarPage — first test: display only
+
+Purpose: launch the installed stock SetupUtilityApp, selecting the already
+registered PCI Express Configuration form 0x159A as the initial browser page.
+It does not enable ReBAR or save a setting automatically.
+
+1. Copy RebarPage.efi to the existing EFI-shell USB.
+2. Boot the shell, select that USB filesystem, and run:
+
+       RebarPage.efi
+
+   Do not use load for this application. Do not type exit first.
+   HiiWatch and OpenSetup do not need to be run for this test.
+3. If PCI Express Configuration opens, take a photo showing PCIE Resizable BAR
+   Support and its selected value. Do not change any setting in this first test.
+4. Exit without saving. Send the photo or the exact message/error shown.
+5. If only the ordinary menu opens, exit without saving and report that outcome.
+   If the laptop restarts or the application is rejected, stop and report it.
+
+Implementation and limits
+
+This custom unsigned application temporarily replaces the in-memory public
+FormBrowser2 SendForm function pointer while launching stock Setup. On the first
+browser call it restores that pointer BEFORE calling the original browser, and
+also performs cleanup if the stock application returns without making that call.
+It selects a live HII handle by exporting and validating packages. Exactly one
+normal Advanced package must match the formset GUID, title string ID, SaSetup
+GUID/name/size, and ReBAR question/offset. Otherwise it forwards the original
+browser call unchanged. No handle numbers from the exported file are reused.
+
+The only redirected arguments select one package, the Advanced formset GUID,
+and form 0x159A. This is a temporary browser-interface modification in RAM, not
+a firmware flash or an installed boot entry. It does not patch firmware code,
+change variable write protections, issue SetVariable/RouteConfig/SMM writes, or
+save a setting. The stock Setup application still runs its normal initialization
+and exit behavior, including any normal firmware variable housekeeping.
+
+The resulting page may still be blocked by vendor layout/access policies or
+fail to render. Displaying it does not establish that saving will work. The
+firmware controls image authentication; no Secure Boot bypass is included.
+
+Validation
+
+Six native tests passed against the exact captured normal and hidden packages:
+normal-vs-hidden selection, truncated input, malformed input, unique handle
+selection, restoration-before-call and status/action preservation, and unchanged
+fallback on ambiguous matches. Assertions were enabled.
+
+A QEMU/EDK2 integration harness registered a copy of the captured normal Advanced
+package (with only its original-machine device-path package removed for import),
+then invoked the temporary wrapper at application level. A test browser sink
+verified the actual HII handle, formset GUID, form 0x159A, prior restoration of
+the browser interface, and action propagation. The test succeeded. This tests
+selection and dispatch, NOT rendering/saving through Framework's H2O browser.
+The earlier stock-application launcher was separately tested using an emulator
+firmware-file application. The delivered binary is an x64 EFI application with
+no external imports. Physical Framework testing remains outstanding.
+
+Sources: RebarPage.c plus OpenSetup.c. No captured firmware package or BIOS image
+is embedded in the delivered executable; it uses the machine's own live forms.

@@ -1,0 +1,48 @@
+HiiWatch — temporary setup-form capture
+
+Purpose: wait for live Advanced setup forms, then export the HII database to
+HII-setup.bin in the root of the USB drive from which this driver was loaded.
+It does not open hidden menus or enable ReBAR.
+
+1. Copy HiiWatch.efi to the same EFI-shell USB you used for HiiReadOnly.
+2. Boot that shell; select the USB mapping and verify HiiWatch.efi is present.
+3. Enter: load HiiWatch.efi
+4. After it reports loaded, enter: exit
+5. If the firmware menu offers Setup Utility, open it WITHOUT restarting.
+6. Wait at least 5 seconds in Setup Utility. Change no settings.
+7. Exit without saving and return to Windows. Upload HII-setup.bin from USB.
+
+If exit boots Windows directly, or Setup Utility requires a restart, this route
+cannot capture the forms. Report that behavior; do not repeat the same sequence.
+If the file does not appear, report that result rather than assuming success.
+If an HII-setup.bin already exists, rename it on Windows before another attempt;
+the diagnostic will not overwrite it.
+
+This is a custom unsigned EFI BOOT-SERVICE DRIVER, loaded with the shell's load
+command. Its code remains in memory until the next restart. No persistent driver
+installation or boot entry is created. Restarting removes it. If Secure Boot
+rejects it, stop; do not change security settings just to run it.
+
+The driver calls HII export and notification services, boot-service memory/timer
+services, and USB filesystem methods. It does not call SetVariable, RouteConfig,
+SendForm, flash services, or SMM communication services. HII export can invoke
+the firmware's own registered export callbacks. Polling is limited to 120 checks
+after load or the latest forms-package notification, with one-second intervals.
+After creating an output file, including a partial-write failure, it stops trying.
+
+Validation: nine native mocked tests with assertions enabled passed: capture
+and cleanup, absent target/no file, overwrite refusal, partial write handling,
+reentrancy guard, malformed IFR rejection, truncation rejection, bounded polling,
+and flush-error handling.
+QEMU/EDK2 test: booted an EFI harness, loaded this driver using LoadImage/StartImage,
+registered a synthetic Advanced formset through NewPackageList, waited, and shut
+down the emulator. With a FAT16 disk image it produced a 43,909-byte export with
+13 valid package lists, including the synthetic target formset. Every list,
+package and IFR opcode length was independently checked after the VM shut down.
+An earlier QEMU virtual-folder filesystem test produced a truncated file; that
+output was rejected. The final build explicitly flushes its output file.
+
+Not tested on a physical Framework laptop. The emulator test proves the generic
+capture mechanism, not Framework's same-boot navigation or hidden-menu access.
+
+Source is supplied as HiiWatch.c. No modified BIOS or enablement payload is supplied.

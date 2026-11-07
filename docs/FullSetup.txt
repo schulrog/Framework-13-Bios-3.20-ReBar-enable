@@ -1,0 +1,71 @@
+FullSetup — normal BIOS menus plus the full hidden Advanced tree
+For the Framework Laptop 13 12th Gen Intel BIOS 3.20 examined in this chat.
+
+FIRST RUN
+
+1. Copy FullSetup.efi onto the existing EFI-shell USB.
+2. Boot the shell, select that USB mapping, then run:
+
+       FullSetup.efi
+
+   Do not use load, do not type exit first, and do not run the earlier helpers.
+3. Press 3 for the combined interface.
+4. Look for the usual BIOS tabs AND an additional Advanced (Extended) tab.
+5. Inspect only on this first run. Photograph the top tabs and the extended page,
+   then exit without saving. Report missing tabs, errors, or a restart.
+
+The launcher also offers 1 = normal setup unchanged, 2 = hidden Advanced only,
+and Escape = cancel. These are fallback routes if the firmware does not display
+the combined interface. Run FullSetup.efi again to select a different mode.
+
+WHAT 'COMBINED' MEANS
+
+The normal pages are passed to the browser exactly as the stock application
+supplies them, in their original order. The matching hidden package is appended
+as another menu tree. Its English root/formset labels are temporarily changed to
+Advanced (Extended) so it is distinguishable from ordinary Advanced. The original
+labels are restored when the browser returns. No options are flattened into a
+single form and duplicate question identifiers are not merged.
+
+Firmware layout rules may still hide the extra tab or individual controls. This
+is a first hardware test of the combined browser interface, not a promise that
+every compiled option will be shown, editable, functional, or appropriate for
+this laptop. Hidden power, memory and hardware settings can prevent normal boot;
+do not change unfamiliar options merely because they are now accessible.
+
+NO FLASHING OR AUTOMATIC SETTINGS SAVE
+
+Like the successful RebarPage launcher, this starts the machine's installed
+stock SetupUtilityApp. A temporary in-memory SendForm wrapper selects the menu
+set and restores the original browser function BEFORE invoking it. Normal mode
+does not install this wrapper. Combined mode updates only two labels in the live
+hidden HII package and restores them afterward. A restart also clears the
+temporary changes. No persistent integration or new boot entry is installed.
+
+The tool does not call SetVariable, RouteConfig, flash-writing or SMM services.
+Any settings changes explicitly saved through the stock browser are real BIOS
+configuration changes. Stock Setup can also perform its usual initialization/
+exit housekeeping. Firmware image-authentication checks remain in force.
+
+VALIDATION
+
+Nine native tests against the captured normal/hidden package lists passed with
+assertions enabled: exact hidden-package match, truncation rejection, unique
+live handle selection, all menu choices/cancel, unmodified normal mode, hidden
+root dispatch/status propagation, merged handle order and label restoration,
+rollback after partial label failure, and normal fallback on an ambiguous match.
+
+A QEMU/EDK2 integration harness imported copies of both captured form packages,
+omitting the original machine's device-path packages and giving the hidden test
+list a distinct package-list GUID. Formset and question identities were unchanged.
+Using real HII database and HII string services, it verified selected handles,
+normal-plus-hidden dispatch, an unchanged normal label, the extended hidden
+label, and restoration of browser/labels. A test browser sink was used: this
+does not validate tab rendering or saving in Framework's H2O browser.
+
+The stock-launch and single-page mechanisms were previously tested, and the
+user confirmed successful ReBAR saving through the earlier RebarPage build.
+FullSetup combined-mode behavior on Framework hardware remains unverified.
+
+Sources are supplied in FullSetup-source.zip. No BIOS image or captured firmware
+form data is embedded in FullSetup.efi; it selects the machine's live packages.

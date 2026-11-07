@@ -1,0 +1,31 @@
+HiiReadOnly — setup-package diagnostic
+
+This custom unsigned x64 EFI application exports the current HII database to
+HII-export.bin in the root of the drive containing the application. Use a USB
+drive with at least 64 MiB free. It refuses to overwrite an existing export.
+It does not call SetVariable, RouteConfig, SendForm, flash or SMM services.
+ExportPackageLists may invoke the firmware's own export-notification callbacks.
+
+Build checks: compiled with warnings enabled; x64 PE/EFI application format,
+entry point, relocation directory and absence of external imports inspected.
+Not tested on a physical Framework laptop or in a firmware emulator.
+
+1. Copy HiiReadOnly.efi to the existing EFI-shell USB drive.
+2. Do not copy BIOS update files or create startup.nsh.
+3. Boot the same EFI shell used previously.
+4. Select the USB mapping (for example fs0:), verify with ls that the file is
+   present, then enter HiiReadOnly.efi.
+5. If it reports success, exit the shell and boot Windows normally.
+6. Upload HII-export.bin from the USB drive for inspection.
+
+If Secure Boot rejects this unsigned application, stop and report the error;
+do not change Secure Boot merely to run it. If the application reports an error,
+send the displayed status code. No firmware settings need to be changed.
+
+A missing hidden form in an EFI-shell export is inconclusive: setup may register
+its forms only while the setup application is active. This diagnostic does not
+open setup or attempt to make hidden forms visible. A positive match would show
+live presence, not that saving a setting is permitted.
+
+SHA256 HiiReadOnly.efi:
+17487F1A77727A2A8A8E66BFE815A1E61DEF9DFD023315027C577073BC819F71

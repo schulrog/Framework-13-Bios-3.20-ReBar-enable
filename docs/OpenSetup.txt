@@ -1,0 +1,46 @@
+OpenSetup — launch the installed stock Setup application without shell exit
+
+Copy OpenSetup.efi and HiiWatch.efi to the existing EFI-shell USB.
+Boot the EFI shell, select that USB's filesystem mapping, then run:
+
+    load HiiWatch.efi
+    OpenSetup.efi
+
+Do NOT type exit between these commands. OpenSetup locates the firmware volume
+containing SetupUtilityApp GUID 3935B0A1-A182-4887-BC56-675528E78877 and asks the
+firmware to load and start that installed application using its firmware-file
+device path. It requires exactly one matching application. No extracted BIOS
+executable is copied into memory or substituted for the installed application.
+
+If Setup opens, wait at least five seconds without changing any setting. Then
+exit without saving and return to Windows. Upload HII-setup.bin from the USB.
+The usual BIOS menu is expected; seeing the normal menu is not a failure.
+This tool does not display a hidden form or enable ReBAR.
+
+If a command reports an error, photograph the message and stop. If the laptop
+restarts, report that outcome; do not repeat the sequence. If Secure Boot rejects
+either unsigned executable, stop without changing Secure Boot for this test.
+
+If HII-setup.bin already exists, rename it on Windows before trying: HiiWatch
+refuses to overwrite an existing file. The export is diagnostic information only.
+
+OpenSetup itself calls read-only firmware-volume metadata queries and standard
+LoadImage/StartImage services. It does not call SetVariable, firmware-volume
+WriteFile, RouteConfig, SendForm, flash, SMM communication, or ResetSystem.
+It does not bypass firmware image authentication. The stock Setup application
+runs its own normal initialization and exit behavior; those may include normal
+firmware variable housekeeping or a firmware-requested restart. Thus opening
+stock Setup is not a guarantee of zero firmware-initiated variable writes.
+
+Validation: five native path-construction checks passed. A QEMU/EDK2 test build,
+with the target changed only for testing to the emulator's built-in shell GUID,
+located that firmware file, launched it, and returned EFI_SUCCESS after the
+shell exited. This validates the generic FV2/firmware-file loading mechanism,
+not Framework SetupUtilityApp's behavior. The delivered build was independently
+checked as an x64 EFI application containing the Framework Setup application
+GUID and not the emulator shell GUID. It has no external imports.
+
+Not tested on physical Framework hardware. No modified BIOS or ReBAR-setting
+write is included. HiiWatch remains temporary and is removed by a restart.
+
+Source: OpenSetup.c.
